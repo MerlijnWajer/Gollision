@@ -12,14 +12,17 @@ import (
 var (
     w = 100
     h = 100
-    maxdepth = int(math.Floor(math.Pow(float64(w), 0.25)))
-    capacity = 2
+    maxdepth = int(math.Floor(math.Pow(float64(w), 0.5)))
+    capacity = 10
+    insert = 1000
 )
 
+// Vertex represents a point
 type Vertex struct {
     x, y int
 }
 
+// Rectangle is as you'd expect. Represented with left top and right bottom.
 type Rectangle struct {
     lt, rb Vertex
 }
@@ -126,6 +129,7 @@ func (q *QuadTree) Add(o *Object) bool {
     /* List if full, divide */
     if q.NW == nil {
         if !q.SubDivide() {
+            fmt.Println("SubDivide failed")
             return false
         }
         // Doesn't work due to other bug
@@ -133,12 +137,13 @@ func (q *QuadTree) Add(o *Object) bool {
     }
 
     success := q.AddToChild(o)
-
+    /* If this failed, we could try a q.Clean() */
 
     if !success {
         return false
         //panic("Failed to add")
     }
+
 
     return success
 }
@@ -154,7 +159,7 @@ func (q * QuadTree) CanContain(o *Object) bool {
 func (q *QuadTree) Print(d int) {
     prefix := strings.Repeat("-", d*2)
 
-    fmt.Println(prefix, q.r, "#=", q.s.Len())
+    fmt.Println(prefix, q.r, "#", q.s.Len())
     for e := q.s.Front(); e != nil; e = e.Next() {
         o := e.Value.(*Object)
         fmt.Println(prefix, " *", o)
@@ -169,13 +174,21 @@ func (q *QuadTree) Print(d int) {
 }
 
 func GenerateObjects(c chan *Object) {
+    var o *Object
     amt := 0
-    for amt < 40 {
+    for amt < insert {
         amt += 1
-        o := Object{Vertex{1, 1}, Vertex{rand.Intn(w), rand.Intn(h)}}
-        //o := Object{Vertex{rand.Intn(50), rand.Intn(50)}, Vertex{rand.Intn(w), rand.Intn(h)}}
-        //fmt.Println(o)
-        c <- &o
+        o = &Object{Vertex{1, 1}, Vertex{rand.Intn(w),rand.Intn(h)}}
+        /*
+        for {
+            o = &Object{Vertex{rand.Intn(20), rand.Intn(20)},
+                Vertex{rand.Intn(w),rand.Intn(h)}}
+            if o.size.x + o.pos.x < 100 && o.size.y + o.pos.y < 100 {
+                break
+            }
+        }
+        */
+        c <- o
     }
 
     close(c)
@@ -201,13 +214,10 @@ func main() {
             qt.Print(0)
             panic("Fail")
         }
-        //qt.Print(0)
-        //fmt.Println(strings.Repeat("-", 80))
     }
-    qt.Print(0)
 
     t2 := time.Now()
-    fmt.Println("Time taken: ", t2.Sub(t))
+    fmt.Println("Time taken to add", insert, "items: ", t2.Sub(t))
 
     fmt.Println(maxdepth)
 }
