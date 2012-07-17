@@ -24,8 +24,8 @@ var (
     insert = 35
     imw = 1920
     imh = 1080
-    ws = imw / w
-    hs = imh / h
+    ws = float64(imw) / float64(w)
+    hs = float64(imh) / float64(h)
 )
 
 // Vertex represents a point
@@ -74,19 +74,22 @@ func (q *QuadTree) Draw(i *image.RGBA) {
     col2 := color.RGBA{uint8(rand.Intn(255)), uint8(rand.Intn(255)), uint8(rand.Intn(255)), 100}
 
     draw.Draw(i, image.Rectangle{
-            image.Point{q.r.lt.x * ws, q.r.lt.y * hs},
-            image.Point{q.r.rb.x * ws, q.r.rb.y * hs}},
+            image.Point{int(float64(q.r.lt.x) * ws), int(float64(q.r.lt.y) * hs)},
+            image.Point{int(float64(q.r.rb.x) * ws), int(float64(q.r.rb.y) * hs)}},
         &image.Uniform{col2}, image.ZP, draw.Src)
 
     for e := q.s.Front(); e != nil; e = e.Next() {
         o := e.Value.(*Object)
-        fmt.Println(image.Rectangle{image.Point{o.pos.x, o.pos.y},
-            image.Point{o.pos.x + o.size.x, o.pos.y + o.size.y}})
+        /*
+        fmt.Println(image.Rectangle{image.Point{o.pos.x * ws, o.pos.y * hs},
+            image.Point{(o.pos.x + o.size.x) * ws, (o.pos.y + o.size.y) * hs}})
+            */
 
 
         draw.Draw(i, image.Rectangle{
-                image.Point{o.pos.x * ws, o.pos.y * hs},
-                image.Point{(o.pos.x + o.size.x) * ws, (o.pos.y + o.size.y) * hs}},
+                image.Point{int(float64(o.pos.x) * ws), int(float64(o.pos.y) * hs)},
+                image.Point{int(float64((o.pos.x + o.size.x)) * ws),
+                int(float64((o.pos.y + o.size.y)) * hs)}},
             &image.Uniform{col}, image.ZP, draw.Src)
         fmt.Println("Drawing")
     }
