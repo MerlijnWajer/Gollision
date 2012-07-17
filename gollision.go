@@ -12,6 +12,7 @@ import (
 var (
     w = 100
     h = 100
+    // Need a better way to get maxdepth (also 0.5 -> 0.25)
     maxdepth = int(math.Floor(math.Pow(float64(w), 0.5)))
     capacity = 10
     insert = 1000
@@ -48,6 +49,7 @@ type QuadTree struct {
     NW, NE, SW, SE *QuadTree
 }
 
+// Initialise node
 func (q *QuadTree) Init(r Rectangle, depth int) *QuadTree {
     q.s = new(list.List)
     q.s.Init()
@@ -59,6 +61,15 @@ func (q *QuadTree) Init(r Rectangle, depth int) *QuadTree {
     return q
 }
 
+// Returns true if the node can contain the object by looking at size and pos.
+func (q * QuadTree) CanContain(o *Object) bool {
+    s := o.Size()
+    p := o.Pos()
+    return p.x >= q.r.lt.x && p.y >= q.r.lt.y &&
+            s.x + p.x <= q.r.rb.x && s.y + p.y <= q.r.rb.y
+}
+
+// Create four children
 func (q *QuadTree) SubDivide() bool {
     if q.depth > maxdepth {
         return false
@@ -84,6 +95,7 @@ func (q *QuadTree) SubDivide() bool {
     return true
 }
 
+// Add to double linked list in node. Returns false is the list if full.
 func (q *QuadTree) AddSimple(o * Object) bool {
     l := q.s
     if l.Len() >= capacity {
@@ -93,6 +105,8 @@ func (q *QuadTree) AddSimple(o * Object) bool {
     return true
 }
 
+// Reorder children. Try to push children down the tree to make space in
+// the list.
 func (q *QuadTree) Clean() bool {
     l := new(list.List)
     l.Init()
@@ -108,6 +122,7 @@ func (q *QuadTree) Clean() bool {
     return true
 }
 
+// Add to children if possible. Returns true on success
 func (q *QuadTree) AddToChild(o *Object) bool {
     switch {
         case q.NW.CanContain(o): return q.NW.Add(o)
@@ -118,6 +133,7 @@ func (q *QuadTree) AddToChild(o *Object) bool {
     return false
 }
 
+// Add object to Tree
 func (q *QuadTree) Add(o *Object) bool {
     if !q.CanContain(o) {
         return false
@@ -126,13 +142,13 @@ func (q *QuadTree) Add(o *Object) bool {
         return true
     }
 
-    /* List if full, divide */
+    /* List is full, divide */
     if q.NW == nil {
         if !q.SubDivide() {
             fmt.Println("SubDivide failed")
             return false
         }
-        // Doesn't work due to other bug
+
         q.Clean()
     }
 
@@ -144,18 +160,10 @@ func (q *QuadTree) Add(o *Object) bool {
         //panic("Failed to add")
     }
 
-
     return success
 }
 
-func (q * QuadTree) CanContain(o *Object) bool {
-    s := o.Size()
-    p := o.Pos()
-    return p.x >= q.r.lt.x && p.y >= q.r.lt.y &&
-            s.x + p.x <= q.r.rb.x && s.y + p.y <= q.r.rb.y
-
-}
-
+// Simple print of the tree
 func (q *QuadTree) Print(d int) {
     prefix := strings.Repeat("-", d*2)
 
@@ -173,6 +181,7 @@ func (q *QuadTree) Print(d int) {
     }
 }
 
+// Generate random objects and send them over the channel.
 func GenerateObjects(c chan *Object) {
     var o *Object
     amt := 0
