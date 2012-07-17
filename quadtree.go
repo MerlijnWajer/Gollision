@@ -121,6 +121,5 @@ func (q *QuadTree) Add(o *Object) bool {
         //panic("Failed to add")
     }
 
-    q.Clean()
     return success
 }
