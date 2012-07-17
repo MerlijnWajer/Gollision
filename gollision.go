@@ -87,12 +87,10 @@ func (q *QuadTree) AddSimple(o * Object) bool {
         return false
     }
     l.PushBack(o)
-    fmt.Println("Adding:", o)
     return true
 }
 
 func (q *QuadTree) Clean() bool {
-    fmt.Println("Clean")
     l := new(list.List)
     l.Init()
     for e := q.s.Front(); e != nil; e = e.Next() {
@@ -118,6 +116,9 @@ func (q *QuadTree) AddToChild(o *Object) bool {
 }
 
 func (q *QuadTree) Add(o *Object) bool {
+    if !q.CanContain(o) {
+        return false
+    }
     if q.AddSimple(o) {
         return true
     }
@@ -128,7 +129,7 @@ func (q *QuadTree) Add(o *Object) bool {
             return false
         }
         // Doesn't work due to other bug
-        //q.Clean()
+        q.Clean()
     }
 
     success := q.AddToChild(o)
@@ -167,13 +168,14 @@ func (q *QuadTree) Print(d int) {
     }
 }
 
-func GenerateObjects(c chan Object) {
+func GenerateObjects(c chan *Object) {
     amt := 0
-    for amt < 4 {
+    for amt < 40 {
         amt += 1
         o := Object{Vertex{1, 1}, Vertex{rand.Intn(w), rand.Intn(h)}}
-        fmt.Println(o)
-        c <- o
+        //o := Object{Vertex{rand.Intn(50), rand.Intn(50)}, Vertex{rand.Intn(w), rand.Intn(h)}}
+        //fmt.Println(o)
+        c <- &o
     }
 
     close(c)
@@ -186,7 +188,7 @@ func main() {
 
     qt := new(QuadTree)
 
-    c := make(chan Object)
+    c := make(chan *Object)
 
     t := time.Now()
     qt.Init(R, 0)
@@ -194,13 +196,13 @@ func main() {
     go GenerateObjects(c)
 
     for o := range c {
-        if !qt.Add(&o) {
+        if !qt.Add(o) {
             fmt.Println("Failed to add:", o)
             qt.Print(0)
             panic("Fail")
         }
-        qt.Print(0)
-        fmt.Println(strings.Repeat("-", 80))
+        //qt.Print(0)
+        //fmt.Println(strings.Repeat("-", 80))
     }
     qt.Print(0)
 
