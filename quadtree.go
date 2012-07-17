@@ -42,13 +42,10 @@ func (q *QuadTree) SubDivide() bool {
     h2 := (q.r.rb.y - q.r.lt.y) / 2
 
     NWArea := Rectangle{q.r.lt, Vertex{q.r.rb.x - w2, q.r.rb.y - h2}}
-
     NEArea := Rectangle{Vertex{q.r.lt.x + w2, q.r.lt.y},
         Vertex{q.r.rb.x, q.r.rb.y - h2}}
-
     SWArea := Rectangle{Vertex{q.r.lt.x, q.r.lt.y + h2},
         Vertex{q.r.rb.x - w2, q.r.rb.y}}
-
     SEArea := Rectangle{Vertex{q.r.lt.x + w2, q.r.lt.y + h2}, q.r.rb}
 
     q.NW = new(QuadTree).Init(NWArea, q.depth)
@@ -124,5 +121,6 @@ func (q *QuadTree) Add(o *Object) bool {
         //panic("Failed to add")
     }
 
+    q.Clean()
     return success
 }

@@ -2,19 +2,30 @@ package main
 
 import (
     "fmt"
-    "math"
     "time"
     "math/rand"
     "strings"
+    "image"
+    "image/draw"
+    "image/color"
+    "image/png"
+    //"io"
+    "os"
 )
 
 var (
-    w = 100
-    h = 100
+    w = 1000
+    h = 1000
     // Need a better way to get maxdepth (also 0.5 -> 0.25)
-    maxdepth = int(math.Floor(math.Pow(float64(w), 0.5)))
-    capacity = 10
-    insert = 1000
+    //maxdepth = int(math.Floor(math.Pow(float64(w), 0.5)))
+    maxdepth = 10
+    capacity = 5
+    black = color.RGBA{0, 0, 0, 255}
+    insert = 35
+    imw = 1920
+    imh = 1080
+    ws = imw / w
+    hs = imh / h
 )
 
 // Vertex represents a point
@@ -58,13 +69,43 @@ func (q *QuadTree) Print(d int) {
     }
 }
 
+func (q *QuadTree) Draw(i *image.RGBA) {
+    col := color.RGBA{uint8(rand.Intn(255)), uint8(rand.Intn(255)), uint8(rand.Intn(255)), 255}
+    col2 := color.RGBA{uint8(rand.Intn(255)), uint8(rand.Intn(255)), uint8(rand.Intn(255)), 100}
+
+    draw.Draw(i, image.Rectangle{
+            image.Point{q.r.lt.x * ws, q.r.lt.y * hs},
+            image.Point{q.r.rb.x * ws, q.r.rb.y * hs}},
+        &image.Uniform{col2}, image.ZP, draw.Src)
+
+    for e := q.s.Front(); e != nil; e = e.Next() {
+        o := e.Value.(*Object)
+        fmt.Println(image.Rectangle{image.Point{o.pos.x, o.pos.y},
+            image.Point{o.pos.x + o.size.x, o.pos.y + o.size.y}})
+
+
+        draw.Draw(i, image.Rectangle{
+                image.Point{o.pos.x * ws, o.pos.y * hs},
+                image.Point{(o.pos.x + o.size.x) * ws, (o.pos.y + o.size.y) * hs}},
+            &image.Uniform{col}, image.ZP, draw.Src)
+        fmt.Println("Drawing")
+    }
+
+    if q.NW != nil {
+        q.NW.Draw(i)
+        q.NE.Draw(i)
+        q.SW.Draw(i)
+        q.SE.Draw(i)
+    }
+}
+
 // Generate random objects and send them over the channel.
 func GenerateObjects(c chan *Object) {
     var o *Object
     amt := 0
     for amt < insert {
         amt += 1
-        o = &Object{Vertex{1, 1}, Vertex{rand.Intn(w),rand.Intn(h)}}
+        o = &Object{Vertex{5, 5}, Vertex{rand.Intn(w - 5),rand.Intn(h - 5)}}
         /*
         for {
             o = &Object{Vertex{rand.Intn(20), rand.Intn(20)},
@@ -79,6 +120,8 @@ func GenerateObjects(c chan *Object) {
 
     close(c)
 }
+
+
 
 func main() {
     fmt.Println("Gollision!", w, h)
@@ -102,8 +145,19 @@ func main() {
         }
     }
 
+    m := image.NewRGBA(image.Rect(0, 0, imw, imh))
+    draw.Draw(m, m.Bounds(), &image.Uniform{black}, image.ZP, draw.Src)
+
+    qt.Draw(m)
+
+    f, _ := os.Create("out.png")
+    png.Encode(f, m)
+
+
     t2 := time.Now()
     fmt.Println("Time taken to add", insert, "items: ", t2.Sub(t))
+
+    qt.Print(1)
 
     fmt.Println(maxdepth)
 }
