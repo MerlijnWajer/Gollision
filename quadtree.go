@@ -5,21 +5,46 @@ import (
     "container/list"
 )
 
+// Vertex represents a point
+type Vertex struct {
+    x, y int
+}
+
+// Rectangle is as you'd expect. Represented with left top and right bottom.
+type Rectangle struct {
+    lt, rb Vertex
+}
+
+type Object struct {
+    size, pos Vertex
+}
+
+func (o *Object) Size() *Vertex {
+    return &o.size
+}
+
+func (o *Object) Pos() *Vertex {
+    return &o.pos
+}
+
+
 type QuadTree struct {
     s *list.List
     r Rectangle
-    depth int
+    depth, maxdepth, capacity int
 
     NW, NE, SW, SE *QuadTree
 }
 
 // Initialise node
-func (q *QuadTree) Init(r Rectangle, depth int) *QuadTree {
+func (q *QuadTree) Init(r Rectangle, depth, maxdepth, capacity int) *QuadTree {
     q.s = new(list.List)
     q.s.Init()
 
     q.r = r
     q.depth = depth + 1
+    q.maxdepth = maxdepth
+    q.capacity = capacity
 
     /* NW, NE, SW, SE are nil initially */
     return q
@@ -35,7 +60,7 @@ func (q * QuadTree) CanContain(o *Object) bool {
 
 // Create four children
 func (q *QuadTree) SubDivide() bool {
-    if q.depth > maxdepth {
+    if q.depth > q.maxdepth {
         return false
     }
     w2 := (q.r.rb.x - q.r.lt.x) / 2
@@ -48,10 +73,10 @@ func (q *QuadTree) SubDivide() bool {
         Vertex{q.r.rb.x - w2, q.r.rb.y}}
     SEArea := Rectangle{Vertex{q.r.lt.x + w2, q.r.lt.y + h2}, q.r.rb}
 
-    q.NW = new(QuadTree).Init(NWArea, q.depth)
-    q.NE = new(QuadTree).Init(NEArea, q.depth)
-    q.SW = new(QuadTree).Init(SWArea, q.depth)
-    q.SE = new(QuadTree).Init(SEArea, q.depth)
+    q.NW = new(QuadTree).Init(NWArea, q.depth, q.maxdepth, q.capacity)
+    q.NE = new(QuadTree).Init(NEArea, q.depth, q.maxdepth, q.capacity)
+    q.SW = new(QuadTree).Init(SWArea, q.depth, q.maxdepth, q.capacity)
+    q.SE = new(QuadTree).Init(SEArea, q.depth, q.maxdepth, q.capacity)
 
     return true
 }
@@ -59,7 +84,7 @@ func (q *QuadTree) SubDivide() bool {
 // Add to double linked list in node. Returns false is the list if full.
 func (q *QuadTree) AddSimple(o * Object) bool {
     l := q.s
-    if l.Len() >= capacity {
+    if l.Len() >= q.capacity {
         return false
     }
     l.PushBack(o)
@@ -115,6 +140,8 @@ func (q *QuadTree) Add(o *Object) bool {
 
     success := q.AddToChild(o)
     /* If this failed, we could try a q.Clean() */
+    q.Clean()
+    success = q.AddToChild(o)
 
     if !success {
         return false
