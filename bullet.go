@@ -18,7 +18,8 @@ func GenerateObjects(c chan *Object) {
         if rand.Intn(20) > 18 {
             y = 1;
         }
-        o = &Object{Vertex{x, y}, Vertex{rand.Intn(w - magic),rand.Intn(h - magic)}}
+        o = &Object{Vertex{x, y}, Vertex{rand.Intn(w - magic),
+            rand.Intn(h - magic)}, false}
         /*
         for {
             o = &Object{Vertex{rand.Intn(20), rand.Intn(20)},

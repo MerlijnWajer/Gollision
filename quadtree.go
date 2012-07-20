@@ -18,6 +18,7 @@ type Rectangle struct {
 
 type Object struct {
     size, pos Vertex
+    collides bool
 }
 
 func (o *Object) Size() *Vertex {

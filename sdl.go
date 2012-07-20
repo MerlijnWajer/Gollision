@@ -19,12 +19,19 @@ var (
     ssh = float64(sh) / float64(h)
 )
 var surface *sdl.Surface
+var surfaceb *sdl.Surface
 
 
 func draw_sdl(q *QuadTree, s *sdl.Surface) {
 
     for e := q.s.Front(); e != nil; e = e.Next() {
         o := e.Value.(*Object)
+        var ss *sdl.Surface
+        if o.collides {
+            ss = surfaceb
+        } else {
+            ss = surface
+        }
 
         /*
         fmt.Println(sdl.Rect{int16(float64(o.pos.x) * ssw),
@@ -39,7 +46,7 @@ func draw_sdl(q *QuadTree, s *sdl.Surface) {
             int16(float64(o.pos.y) * ssh),
             uint16(float64((o.pos.x + o.size.x)) * ssw),
             uint16(float64((o.pos.y + o.size.y)) * ssh)},
-            surface,
+            ss,
             &sdl.Rect{0, 0, uint16(o.size.x), uint16(o.size.y)})
     }
 
@@ -50,7 +57,6 @@ func draw_sdl(q *QuadTree, s *sdl.Surface) {
         draw_sdl(q.SE, s)
     }
 }
-
 
 func _sdl(q *QuadTree) {
     if sdl.Init(sdl.INIT_EVERYTHING) != 0 {
@@ -70,7 +76,12 @@ func _sdl(q *QuadTree) {
     surface = sdl.CreateRGBSurface(sdl.HWSURFACE, 100, 100, 32, rmask,
         gmask, bmask, amask)
 
-    surface.FillRect(nil, 0xff0000ff)
+    surface.FillRect(nil, 0xff00ff00)
+
+    surfaceb = sdl.CreateRGBSurface(sdl.HWSURFACE, 100, 100, 32, rmask,
+        gmask, bmask, amask)
+
+    surfaceb.FillRect(nil, 0xffff0000)
 
     /*
     screen.FillRect(nil, 0xffffffff)
