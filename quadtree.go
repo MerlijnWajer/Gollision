@@ -2,6 +2,7 @@ package main
 
 import (
     "fmt"
+    "strings"
     "container/list"
 )
 
@@ -150,3 +151,22 @@ func (q *QuadTree) Add(o *Object) bool {
 
     return success
 }
+
+// Simple print of the tree
+func (q *QuadTree) Print(d int) {
+    prefix := strings.Repeat("-", d*2)
+
+    fmt.Println(prefix, q.r, "#", q.s.Len())
+    for e := q.s.Front(); e != nil; e = e.Next() {
+        o := e.Value.(*Object)
+        fmt.Println(prefix, " *", o)
+    }
+
+    if q.NW != nil {
+        q.NW.Print(d+1)
+        q.NE.Print(d+1)
+        q.SW.Print(d+1)
+        q.SE.Print(d+1)
+    }
+}
+
