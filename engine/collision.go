@@ -4,50 +4,44 @@ import (
     "sync"
 )
 
-func Collisions(q *QuadTree, out chan *Object) {
-
-    doCollisions(q, out, 1)
-    close(out)
+func safeCollisions(q *QuadTree, out chan *Object, gogo int, wg *sync.WaitGroup) {
+    Collisions(q.NW, out, gogo - 1)
+    wg.Done()
 }
 
-
-func doCollisions(q *QuadTree, out chan *Object, gogo int) {
+func Collisions(q *QuadTree, out chan *Object, gogo int) {
+    //findcol_wg := new(sync.WaitGroup)
     for e := q.s.Front(); e != nil; e = e.Next() {
         o := e.Value.(*Object)
 
         FindCollision(q, o, out)
+        //findcol_wg.Add(1)
+        //go func() {
+        //    FindCollision(q, o, out)
+        //    findcol_wg.Done()
+        //}()
     }
+
+    //findcol_wg.Wait()
 
     if (q.NW != nil) {
         if (gogo > 0) {
             wg := new(sync.WaitGroup)
             wg.Add(1)
-            go func() {
-                doCollisions(q.NW, out, gogo-1)
-                wg.Done()
-            }()
+            go safeCollisions(q.NW, out, gogo-1, wg)
             wg.Add(1)
-            go func() {
-                doCollisions(q.NE, out, gogo-1)
-                wg.Done()
-            }()
-            go func() {
-                wg.Add(1)
-                doCollisions(q.SW, out, gogo-1)
-                wg.Done()
-            }()
-            go func() {
-                wg.Add(1)
-                doCollisions(q.SE, out, gogo-1)
-                wg.Done()
-            }()
+            go safeCollisions(q.NE, out, gogo-1, wg)
+            wg.Add(1)
+            go safeCollisions(q.SW, out, gogo-1, wg)
+            wg.Add(1)
+            go safeCollisions(q.SE, out, gogo-1, wg)
 
             wg.Wait()
         } else {
-            doCollisions(q.NW, out, gogo-1)
-            doCollisions(q.NE, out, gogo-1)
-            doCollisions(q.SW, out, gogo-1)
-            doCollisions(q.SE, out, gogo-1)
+            Collisions(q.NW, out, gogo-1)
+            Collisions(q.NE, out, gogo-1)
+            Collisions(q.SW, out, gogo-1)
+            Collisions(q.SE, out, gogo-1)
         }
     }
 }
