@@ -3,117 +3,57 @@ package main
 import (
     "fmt"
     "time"
-    "container/list"
+    "quadtree"
+    "math/rand"
 )
 
-var (
-    w = 1920
-    h = 1080
-    // Need a better way to get maxdepth (also 0.5 -> 0.25)
-    //maxdepth = int(math.Floor(math.Pow(float64(w), 0.5)))
-    maxdepth = 8
-    capacity = 30
-    insert = 1000
-    magic = 20
+const (
+    w = 800
+    h = 800
+    magic = 10
+    insert = 100
 )
 
-func Collisions(q *QuadTree) {
-    l := new(list.List)
-    for e := q.s.Front(); e != nil; e = e.Next() {
-        o := e.Value.(*Object)
-
-        l.Init()
-        FindCollision(q, o, l)
-        if l.Len() > 0 {
-            l.PushBack(o)
-            for e2 := l.Front(); e2 != nil; e2 = e2.Next() {
-                o2 := e2.Value.(*Object)
-                o2.collides = true
-            }
+// Generate random objects and send them over the channel.
+func GenerateObjects(c chan *quadtree.Object) {
+    var o *quadtree.Object
+    amt := 0
+    for amt < insert {
+        amt += 1
+        x := rand.Intn(magic)
+        y := rand.Intn(magic)
+        if rand.Intn(20) > 18 {
+            x = 1;
         }
-    }
-
-    if (q.NW != nil) {
-        Collisions(q.NW)
-        Collisions(q.NE)
-        Collisions(q.SW)
-        Collisions(q.SE)
-    }
-}
-
-func Collides(o, o2 *Object) bool {
-    switch {
-        case o.pos.y + o.size.y < o2.pos.y:
-            return false
-        case o.pos.y > o2.pos.y + o2.size.y:
-            return false
-        case o.pos.x + o.size.x < o2.pos.x:
-            return false
-        case o.pos.x > o2.pos.x + o2.size.x:
-            return false
-    }
-
-    return true
-}
-
-func FindCollision(q* QuadTree, obj *Object, l *list.List) {
-    for e := q.s.Front(); e != nil; e = e.Next() {
-        o := e.Value.(*Object)
-
-        // We always collide with ourself
-        if o == obj {
-            continue
+        if rand.Intn(20) > 18 {
+            y = 1;
         }
-        if Collides(o, obj) {
-            //fmt.Println("Marking", o, "and", obj, "as collision")
-            l.PushBack(o)
-        }
+        o = &quadtree.Object{
+            Pos: quadtree.Vertex{rand.Intn(w - magic), rand.Intn(h - magic)},
+            Size : quadtree.Vertex{x, y}}
+
+        c <- o
     }
 
-    if (q.NW != nil) {
-        FindCollision(q.NW, obj, l)
-        FindCollision(q.NE, obj, l)
-        FindCollision(q.SW, obj, l)
-        FindCollision(q.SE, obj, l)
-    }
+    close(c)
 }
 
 func main() {
-    fmt.Println("Gollision!", w, h)
+    fmt.Println("Gollision")
 
-    R := Rectangle{Vertex{0, 0}, Vertex{w, h}}
-
-    qt := new(QuadTree)
-
-    c := make(chan *Object)
+    objchan := make(chan *quadtree.Object)
 
     t := time.Now()
-    qt.Init(R, 0, maxdepth, capacity)
 
-    go GenerateObjects(c)
+    qt := new(quadtree.QuadTree)
+    qt.Init(quadtree.Rectangle{quadtree.Vertex{0, 0}, quadtree.Vertex{w, h}},
+        0, &quadtree.QuadTreeInfo{MaxDepth: 5})
 
-    cc := 0
-    for o := range c {
-        cc += 1
-        if !qt.Add(o) {
-            fmt.Println("Failed to add:", o)
-            qt.Print(0)
-            fmt.Println("After", cc, "tries")
-            //panic("Fail")
-            break;
-        }
-    }
+    go GenerateObjects(objchan)
+    qt.AddObjects(objchan)
 
     t2 := time.Now()
-    fmt.Println("Time taken to add", insert, "items: ", t2.Sub(t))
+    fmt.Println("Time taken:", t2.Sub(t))
 
-    qt.Clean() // This speeds up collision. ;-)
-    t = time.Now()
-    Collisions(qt)
-    t2 = time.Now()
-    fmt.Println("Time taken for collision", t2.Sub(t))
-
-    _sdl(qt)
-
-    //gollision_draw(qt)
+    //qt.Print(0)
 }
