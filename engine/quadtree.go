@@ -1,4 +1,4 @@
-package quadtree
+package engine
 
 import (
     "fmt"
@@ -92,50 +92,31 @@ func (q * QuadTree) CanContain(o *Object) bool {
 }
 
 func (q* QuadTree) AddObjects(objchan chan *Object) {
-    var (
-        objcount = 0
-        addcount = 0
-        addchan = make(chan bool)
-        done = false
-    )
+    wg := new(sync.WaitGroup)
 
-    out:
-    for {
-        select {
-        case obj, ok := <-objchan:
-            if !ok {
-                done = true
-            } else {
-                fmt.Println("obj")
-                objcount += 1
-                go q.Add(obj, addchan)
-            }
-        case add := <-addchan:
-            fmt.Println("add", add, addcount, objcount)
-            if add {
-                addcount += 1
-            } else {
-                fmt.Println("WHOOPS")
-                panic("Add was false")
-            }
-            if done && addcount == objcount {
-                fmt.Println("Breaking, done=", done)
-                break out
-            }
-        }
+    for obj := range objchan {
+        wg.Add(1)
+        go q.Add(obj, wg)
     }
-
-    fmt.Println("Objcount:", objcount, "Addcount:", addcount)
+    wg.Wait()
 }
 
-func (q *QuadTree) Add(o *Object, addchan chan bool) {
+func (q *QuadTree) Add(o *Object, wg *sync.WaitGroup) {
     added := true
     if q.NW != nil {
         switch {
-        case q.NW.CanContain(o): q.NW.Add(o, addchan)
-        case q.NE.CanContain(o): q.NE.Add(o, addchan)
-        case q.SW.CanContain(o): q.SW.Add(o, addchan)
-        case q.SE.CanContain(o): q.SE.Add(o, addchan)
+        case q.NW.CanContain(o):
+            q.NW.Add(o, wg)
+            return
+        case q.NE.CanContain(o):
+            q.NE.Add(o, wg)
+            return
+        case q.SW.CanContain(o):
+            q.SW.Add(o, wg)
+            return
+        case q.SE.CanContain(o):
+            q.SE.Add(o, wg)
+            return
         default:
             // Doesn't fit in children. Add here.
             added = false
@@ -154,7 +135,7 @@ func (q *QuadTree) Add(o *Object, addchan chan bool) {
         q.Unlock()
     }
 
-    addchan <- added
+    wg.Done()
 }
 
 

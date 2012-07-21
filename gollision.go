@@ -3,20 +3,20 @@ package main
 import (
     "fmt"
     "time"
-    "quadtree"
+    "engine"
     "math/rand"
 )
 
 const (
-    w = 800
-    h = 800
-    magic = 10
-    insert = 100
+    w = 1024
+    h = 768
+    magic = 5
+    insert = 50000
 )
 
 // Generate random objects and send them over the channel.
-func GenerateObjects(c chan *quadtree.Object) {
-    var o *quadtree.Object
+func GenerateObjects(c chan *engine.Object) {
+    var o *engine.Object
     amt := 0
     for amt < insert {
         amt += 1
@@ -28,9 +28,9 @@ func GenerateObjects(c chan *quadtree.Object) {
         if rand.Intn(20) > 18 {
             y = 1;
         }
-        o = &quadtree.Object{
-            Pos: quadtree.Vertex{rand.Intn(w - magic), rand.Intn(h - magic)},
-            Size : quadtree.Vertex{x, y}}
+        o = &engine.Object{
+            Pos: engine.Vertex{rand.Intn(w - magic), rand.Intn(h - magic)},
+            Size : engine.Vertex{x, y}}
 
         c <- o
     }
@@ -41,19 +41,31 @@ func GenerateObjects(c chan *quadtree.Object) {
 func main() {
     fmt.Println("Gollision")
 
-    objchan := make(chan *quadtree.Object)
+    objchan := make(chan *engine.Object)
 
     t := time.Now()
 
-    qt := new(quadtree.QuadTree)
-    qt.Init(quadtree.Rectangle{quadtree.Vertex{0, 0}, quadtree.Vertex{w, h}},
-        0, &quadtree.QuadTreeInfo{MaxDepth: 5})
+    qt := new(engine.QuadTree)
+    qt.Init(engine.Rectangle{engine.Vertex{0, 0}, engine.Vertex{w, h}},
+        0, &engine.QuadTreeInfo{MaxDepth: 5})
 
     go GenerateObjects(objchan)
     qt.AddObjects(objchan)
 
     t2 := time.Now()
-    fmt.Println("Time taken:", t2.Sub(t))
+    fmt.Println("Create time taken:", t2.Sub(t))
+
+    t = time.Now()
+    objchan = make(chan *engine.Object, 50)
+
+    go engine.Collisions(qt, objchan)
+
+    for _ = range objchan {
+        // fmt.Println(o)
+    }
+
+    t2 = time.Now()
+    fmt.Println("Collision time taken:", t2.Sub(t))
 
     //qt.Print(0)
 }
