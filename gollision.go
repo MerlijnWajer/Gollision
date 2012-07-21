@@ -59,16 +59,19 @@ func main() {
     objchan = make(chan *engine.Object, 300)
 
     go func() {
-        engine.Collisions(qt, objchan, 1)
+        engine.Collisions(qt, objchan, 0)
         close(objchan)
     }()
 
-    for _ = range objchan {
+    for o := range objchan {
+        o.Collides = true
         // fmt.Println(o)
     }
 
     t2 = time.Now()
     fmt.Println("Collision time taken:", t2.Sub(t))
+
+    engine.SDLCall(qt)
 
     //qt.Print(0)
 }

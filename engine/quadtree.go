@@ -19,6 +19,7 @@ type Rectangle struct {
 
 type Object struct {
     Pos, Size Vertex
+    Collides bool
 }
 
 type QuadTreeInfo struct {

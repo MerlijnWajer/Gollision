@@ -4,37 +4,44 @@ import (
     "sync"
 )
 
-func safeCollisions(q *QuadTree, out chan *Object, gogo int, wg *sync.WaitGroup) {
-    Collisions(q.NW, out, gogo - 1)
-    wg.Done()
-}
-
 func Collisions(q *QuadTree, out chan *Object, gogo int) {
-    //findcol_wg := new(sync.WaitGroup)
+    findcol_wg := new(sync.WaitGroup)
     for e := q.s.Front(); e != nil; e = e.Next() {
         o := e.Value.(*Object)
 
         FindCollision(q, o, out)
-        //findcol_wg.Add(1)
-        //go func() {
-        //    FindCollision(q, o, out)
-        //    findcol_wg.Done()
-        //}()
+        findcol_wg.Add(1)
+        go func() {
+            FindCollision(q, o, out)
+            findcol_wg.Done()
+        }()
     }
 
-    //findcol_wg.Wait()
+    findcol_wg.Wait()
 
     if (q.NW != nil) {
         if (gogo > 0) {
             wg := new(sync.WaitGroup)
             wg.Add(1)
-            go safeCollisions(q.NW, out, gogo-1, wg)
+            go func() {
+                Collisions(q.NW, out, gogo-1)
+                wg.Done()
+            }()
             wg.Add(1)
-            go safeCollisions(q.NE, out, gogo-1, wg)
+            go func() {
+                Collisions(q.NE, out, gogo-1)
+                wg.Done()
+            }()
             wg.Add(1)
-            go safeCollisions(q.SW, out, gogo-1, wg)
+            go func() {
+                Collisions(q.SW, out, gogo-1)
+                wg.Done()
+            }()
             wg.Add(1)
-            go safeCollisions(q.SE, out, gogo-1, wg)
+            go func() {
+                Collisions(q.SE, out, gogo-1)
+                wg.Done()
+            }()
 
             wg.Wait()
         } else {
