@@ -7,21 +7,6 @@ import (
 	"sync"
 )
 
-// Vertex represents a point
-type Vertex struct {
-	X, Y int
-}
-
-// Rectangle is as you'd expect. Represented with left top and right bottom.
-type Rectangle struct {
-	LT, RB Vertex
-}
-
-type Object struct {
-	Pos, Size Vertex
-	Collides  bool
-}
-
 type QuadTreeInfo struct {
 	MaxDepth int
 }
