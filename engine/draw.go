@@ -3,7 +3,6 @@ package engine
 import (
 	"fmt"
 	"github.com/0xe2-0x9a-0x9b/Go-SDL/sdl"
-	"time"
 )
 
 var (
@@ -18,6 +17,7 @@ var (
 	ssw = float64(sw) / float64(sw)
 	ssh = float64(sh) / float64(sh)
 )
+var screen *sdl.Surface
 var surface *sdl.Surface
 var surfaceb *sdl.Surface
 
@@ -57,12 +57,12 @@ func draw_sdl(q *QuadTree, s *sdl.Surface) {
 	}
 }
 
-func SDLCall(q *QuadTree) {
+func Draw_Init() {
 	if sdl.Init(sdl.INIT_EVERYTHING) != 0 {
 		fmt.Println(sdl.GetError())
 	}
 
-	var screen = sdl.SetVideoMode(sw, sh, 32, sdl.RESIZABLE)
+	screen = sdl.SetVideoMode(sw, sh, 32, sdl.RESIZABLE)
 	if screen == nil {
 		return
 	}
@@ -81,30 +81,35 @@ func SDLCall(q *QuadTree) {
 		gmask, bmask, amask)
 
 	surfaceb.FillRect(nil, 0xffff0000)
+}
 
-	/*
-	   screen.FillRect(nil, 0xffffffff)
-	*/
+func Draw_Stop() {
+    surface.Free()
+    surfaceb.Free()
+    screen.Free()
+    sdl.Quit()
+}
 
-	ticker := time.NewTicker(time.Second / 10) // 50 Hz
+func Draw(q *QuadTree) {
+	//ticker := time.NewTicker(time.Second) // 50 Hz
 	//ticker := time.NewTicker(time.Second / 50) // 50 Hz
 
-	running := true
-	for running {
-		select {
-		case <-ticker.C:
-			//screen.Blit(&sdl.Rect{0, 0, 100, 100}, surface, &sdl.Rect{0, 0, 100, 100})
-			draw_sdl(q, screen)
-			screen.Flip()
+    draw_sdl(q, screen)
+    screen.Flip()
 
-		case _event := <-sdl.Events:
-			switch _event.(type) {
-			case sdl.QuitEvent:
-				running = false
-			}
-		}
-	}
+	//running := true
+	//for running {
+	//	select {
+	//	case <-ticker.C:
+	//		//screen.Blit(&sdl.Rect{0, 0, 100, 100}, surface, &sdl.Rect{0, 0, 100, 100})
+	//		draw_sdl(q, screen)
+	//		screen.Flip()
 
-	surface.Free()
-	sdl.Quit()
+	//	case _event := <-sdl.Events:
+	//		switch _event.(type) {
+	//		case sdl.QuitEvent:
+	//			running = false
+	//		}
+	//	}
+	//}
 }

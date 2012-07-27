@@ -10,4 +10,14 @@ type Object struct {
 	Collides  bool
 
     // backref to node in the tree?
+
+    Bullet
+}
+
+type MoveFunc func(b *Bullet)
+
+type Bullet struct {
+    Move MoveFunc
+
+
 }

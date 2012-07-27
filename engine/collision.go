@@ -4,55 +4,6 @@ import (
 	"sync"
 )
 
-func Collisions(q *QuadTree, out chan *Object, gogo int) {
-	findcol_wg := new(sync.WaitGroup)
-	for e := q.s.Front(); e != nil; e = e.Next() {
-		o := e.Value.(*Object)
-
-		FindCollision(q, o, out)
-		findcol_wg.Add(1)
-		go func() {
-			FindCollision(q, o, out)
-			findcol_wg.Done()
-		}()
-	}
-
-	findcol_wg.Wait()
-
-	if q.NW != nil {
-		if gogo > 0 {
-			wg := new(sync.WaitGroup)
-			wg.Add(1)
-			go func() {
-				Collisions(q.NW, out, gogo-1)
-				wg.Done()
-			}()
-			wg.Add(1)
-			go func() {
-				Collisions(q.NE, out, gogo-1)
-				wg.Done()
-			}()
-			wg.Add(1)
-			go func() {
-				Collisions(q.SW, out, gogo-1)
-				wg.Done()
-			}()
-			wg.Add(1)
-			go func() {
-				Collisions(q.SE, out, gogo-1)
-				wg.Done()
-			}()
-
-			wg.Wait()
-		} else {
-			Collisions(q.NW, out, gogo-1)
-			Collisions(q.NE, out, gogo-1)
-			Collisions(q.SW, out, gogo-1)
-			Collisions(q.SE, out, gogo-1)
-		}
-	}
-}
-
 func Collides(o, o2 *Object) bool {
 	switch {
 	case o.Pos.Y+o.Size.Y < o2.Pos.Y:
@@ -77,6 +28,9 @@ func FindCollision(q *QuadTree, obj *Object, out chan *Object) {
 		if o == obj {
 			continue
 		}
+
+        // TODO: Inline this? Would probably save quite some time...
+        // This is the only place we use it as well.
 		if Collides(o, obj) {
 			out <- o
 			out <- obj
@@ -90,3 +44,29 @@ func FindCollision(q *QuadTree, obj *Object, out chan *Object) {
 		FindCollision(q.SE, obj, out)
 	}
 }
+
+// XXX: This isn't actually useful for our collision detection.
+// Just use this to test the collision functions.
+func Collisions(q *QuadTree, out chan *Object) {
+	findcol_wg := new(sync.WaitGroup)
+	for e := q.s.Front(); e != nil; e = e.Next() {
+		o := e.Value.(*Object)
+
+		FindCollision(q, o, out)
+		findcol_wg.Add(1)
+		go func() {
+			FindCollision(q, o, out)
+			findcol_wg.Done()
+		}()
+	}
+
+	findcol_wg.Wait()
+
+	if q.NW != nil {
+        Collisions(q.NW, out)
+        Collisions(q.NE, out)
+        Collisions(q.SW, out)
+        Collisions(q.SE, out)
+	}
+}
+
