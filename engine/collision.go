@@ -37,6 +37,8 @@ func CollidesNode(q *QuadTree, o *Object) bool {
 }
 
 // TODO: Make this concurrent
+// XXX: Call this with object.CurrentNode as quadtree q. This will
+// speed up the find.
 func FindCollision(q *QuadTree, obj *Object, out chan *Object) {
 	for e := q.s.Front(); e != nil; e = e.Next() {
 		o := e.Value.(*Object)
@@ -55,18 +57,10 @@ func FindCollision(q *QuadTree, obj *Object, out chan *Object) {
 	}
 
 	if q.NW != nil {
-        if CollidesNode(q.NW, obj) {
-		    FindCollision(q.NW, obj, out)
-        }
-        if CollidesNode(q.NE, obj) {
-		    FindCollision(q.NE, obj, out)
-        }
-        if CollidesNode(q.SW, obj) {
-		    FindCollision(q.SW, obj, out)
-        }
-        if CollidesNode(q.SE, obj) {
-		    FindCollision(q.SE, obj, out)
-        }
+        FindCollision(q.NW, obj, out)
+        FindCollision(q.NE, obj, out)
+        FindCollision(q.SW, obj, out)
+        FindCollision(q.SE, obj, out)
 	}
 }
 

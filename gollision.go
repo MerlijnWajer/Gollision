@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"time"
     "container/list"
+    "flag"
     //"sync"
 )
 
@@ -13,13 +14,14 @@ const (
 	w      = 1024
 	h      = 768
 	magic  = 20
-	insert = 1000
 )
 
 var (
     player *engine.Object
     playerTree *engine.QuadTree
     enemyTree *engine.QuadTree
+    speedx, speedy int
+	insert int
 )
 
 // Generate random objects and send them over the channel.
@@ -55,8 +57,8 @@ func Move() {
             // TODO: set collides to false, move this somewhere else though
             b.Collides = false
 
-            b.Pos.X = b.Pos.X + 1
-            b.Pos.Y = b.Pos.Y + 1
+            b.Pos.X = b.Pos.X + speedx
+            b.Pos.Y = b.Pos.Y + speedy
             if b.Pos.X + b.Size.X > w {
                 b.Pos.X = 0
             }
@@ -88,18 +90,13 @@ func Move() {
 
 func Collide() {
     objchan := make(chan *engine.Object, 9001)
-    /*
 	go func() {
-		engine.FindCollision(enemyTree, player, objchan)
-		close(objchan)
+        engine.FindCollision(player.CurrentNode, player, objchan)
+        close(objchan)
 	}()
-    */
-	engine.FindCollision(enemyTree, player, objchan)
-	close(objchan)
 
 	for o := range objchan {
 		o.Collides = true
-		// fmt.Println(o)
 	}
 }
 
@@ -108,7 +105,12 @@ func Draw() {
 }
 
 func main() {
+    flag.IntVar(&speedx, "speedx", 1, "Speed X")
+    flag.IntVar(&speedy, "speedy", 1, "Speed Y")
+    flag.IntVar(&insert, "insert", 1000, "Amount of bullets")
+    flag.Parse()
 	fmt.Println("Gollision")
+
 
 	player = &engine.Object{Size: engine.Vertex{200, 200}, Pos: engine.Vertex{300, 300}}
 
@@ -132,44 +134,18 @@ func main() {
 	t2 := time.Now()
 	fmt.Println("Create time taken:", t2.Sub(t))
 
-    engine.Draw_Init()
+    //engine.Draw_Init()
 
     t = time.Now()
     i := 0
     for i < 10000 {
         Move()
         Collide()
-        Draw()
+        //Draw()
         i += 1
     }
     t2 = time.Now()
     fmt.Println("BOOM:", t2.Sub(t) / 9999.0)
 
-    engine.Draw_Stop()
-
-    /*
-	t = time.Now()
-
-    go func() {
-        engine.Collisions(qt, objchan, 1)
-        close(objchan)
-    }()
-
-	//go func() {
-	//	engine.FindCollision(qt, oo, objchan)
-	//	close(objchan)
-	//}()
-
-	for o := range objchan {
-		o.Collides = true
-		// fmt.Println(o)
-	}
-
-	t2 = time.Now()
-	fmt.Println("Collision time taken:", t2.Sub(t))
-    */
-
-	//engine.SDLCall(qt)
-
-	//qt.Print(0)
+    //engine.Draw_Stop()
 }
