@@ -4,15 +4,32 @@ import (
 	"sync"
 )
 
+/* Collide object with object */
 func Collides(o, o2 *Object) bool {
 	switch {
-	case o.Pos.Y+o.Size.Y < o2.Pos.Y:
+	case o.Pos.Y+o.Size.Y   < o2.Pos.Y:
 		return false
-	case o.Pos.Y > o2.Pos.Y+o2.Size.Y:
+	case o.Pos.Y            > o2.Pos.Y+o2.Size.Y:
 		return false
-	case o.Pos.X+o.Size.X < o2.Pos.X:
+	case o.Pos.X+o.Size.X   < o2.Pos.X:
 		return false
-	case o.Pos.X > o2.Pos.X+o2.Size.X:
+	case o.Pos.X            > o2.Pos.X+o2.Size.X:
+		return false
+	}
+
+	return true
+}
+
+/* Collide object with quadtree node. */
+func CollidesNode(q *QuadTree, o *Object) bool {
+	switch {
+	case o.Pos.Y+o.Size.Y   < q.r.LT.Y:
+		return false
+	case o.Pos.Y            > q.r.RB.Y:
+		return false
+	case o.Pos.X+o.Size.X   < q.r.LT.X:
+		return false
+	case o.Pos.X            > q.r.RB.X:
 		return false
 	}
 
@@ -38,10 +55,18 @@ func FindCollision(q *QuadTree, obj *Object, out chan *Object) {
 	}
 
 	if q.NW != nil {
-		FindCollision(q.NW, obj, out)
-		FindCollision(q.NE, obj, out)
-		FindCollision(q.SW, obj, out)
-		FindCollision(q.SE, obj, out)
+        if CollidesNode(q.NW, obj) {
+		    FindCollision(q.NW, obj, out)
+        }
+        if CollidesNode(q.NE, obj) {
+		    FindCollision(q.NE, obj, out)
+        }
+        if CollidesNode(q.SW, obj) {
+		    FindCollision(q.SW, obj, out)
+        }
+        if CollidesNode(q.SE, obj) {
+		    FindCollision(q.SE, obj, out)
+        }
 	}
 }
 

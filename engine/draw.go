@@ -69,7 +69,7 @@ func Draw_Init() {
 
 	fmt.Println("HW_available = ", video_info.HW_available)
 	fmt.Println("WM_available = ", video_info.WM_available)
-	fmt.Println("Video_mem = ", video_info.Video_mem, "kb")
+	fmt.Println("Video_mem = ", video_info.Video_mem, "kiB")
 
 	surface = sdl.CreateRGBSurface(sdl.HWSURFACE, 500, 500, 32, rmask,
 		gmask, bmask, amask)

@@ -139,13 +139,19 @@ func (q *QuadTree) Move(e *list.Element) {
     // Always remove. In the worst case we're part of the root node.
     // Which always contains us. If we fit in the node, recursively add it.
     // If we don't fit, recursively move to the top until we fit.
-    o.CurrentNode.s.Remove(e)
+    if !o.CurrentNode.CanContain(o) {
+        o.CurrentNode.s.Remove(e)
+        o.CurrentNode.performMove(o)
+    }
 
+/*
     if o.CurrentNode.CanContain(o) {
         q.Add(o, nil)
     } else {
         o.CurrentNode.performMove(o)
     }
+*/
+    //o.CurrentNode.performMove(o)
 }
 
 func (q *QuadTree) performMove(o* Object) {
@@ -165,7 +171,17 @@ func (q *QuadTree) performMove(o* Object) {
 
 // Use this to iterate over the tree.
 func (q* QuadTree) Walk(w WalkFunc) {
-	for e := q.s.Front(); e != nil; e = e.Next() {
+    // XXX: This function currenly prefetches the next node, to
+    // prevent failure in walking due to the current node
+    // being deleted by the walk function.
+    // This is a temporary fix, walking actually should never
+    // be used on a chaning structure. A better solution could
+    // possibly be to somehow mark nodes in need of movement.
+    // Or introduce a special modification walker function.
+    var n       *list.Element
+
+	for e := q.s.Front(); e != nil; e = n {
+        n = e.Next()
 		//o := e.Value.(*Object)
         w(e)
 	}

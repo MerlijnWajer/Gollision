@@ -87,11 +87,15 @@ func Move() {
 }
 
 func Collide() {
-    objchan := make(chan *engine.Object, 300)
+    objchan := make(chan *engine.Object, 9001)
+    /*
 	go func() {
 		engine.FindCollision(enemyTree, player, objchan)
 		close(objchan)
 	}()
+    */
+	engine.FindCollision(enemyTree, player, objchan)
+	close(objchan)
 
 	for o := range objchan {
 		o.Collides = true
@@ -121,8 +125,8 @@ func main() {
 		0, &engine.QuadTreeInfo{MaxDepth: 5}, nil)
 
     // Generate some objects.
-	go GenerateObjects(objchan)
 	objchan <- player
+	go GenerateObjects(objchan)
 	enemyTree.AddObjects(objchan)
 
 	t2 := time.Now()
