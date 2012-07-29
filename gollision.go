@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"math/rand"
 	"time"
-    "sync"
+    "container/list"
+    //"sync"
 )
 
 const (
@@ -46,25 +47,43 @@ func GenerateObjects(c chan *engine.Object) {
 }
 
 func Move() {
-    wg := new(sync.WaitGroup)
+    //wg := new(sync.WaitGroup)
 
-    wg.Add(1)
-    go func() {
-        // Add new player bullets
-        // Move players (based on input)
-        // Move Player bullets
-        wg.Done()
-    }()
+    enemyTree.Walk(
+        func(e *list.Element) {
+            b := e.Value.(*engine.Object)
+            // TODO: set collides to false, move this somewhere else though
+            b.Collides = false
 
-    wg.Add(1)
-    go func() {
-        // Add NPC bullets (AI)
-        // Move NPCs
-        // Move NPC bullets
-        wg.Done()
-    }()
+            b.Pos.X = b.Pos.X + 1
+            b.Pos.Y = b.Pos.Y + 1
+            if b.Pos.X + b.Size.X > w {
+                b.Pos.X = 0
+            }
+            if b.Pos.Y + b.Size.Y > h {
+                b.Pos.Y = 0
+            }
+            enemyTree.Move(e)
+            //fmt.Println(b)
+        })
 
-    wg.Wait()
+    //wg.Add(1)
+    //go func() {
+    //    // Add new player bullets
+    //    // Move players (based on input)
+    //    // Move Player bullets
+    //    wg.Done()
+    //}()
+
+    //wg.Add(1)
+    //go func() {
+    //    // Add NPC bullets (AI)
+    //    // Move NPCs
+    //    // Move NPC bullets
+    //    wg.Done()
+    //}()
+
+    //wg.Wait()
 }
 
 func Collide() {
@@ -97,9 +116,9 @@ func main() {
 	playerTree = new(engine.QuadTree)
 	enemyTree = new(engine.QuadTree)
 	playerTree.Init(engine.Rectangle{engine.Vertex{0, 0}, engine.Vertex{w, h}},
-		0, &engine.QuadTreeInfo{MaxDepth: 5})
+		0, &engine.QuadTreeInfo{MaxDepth: 5}, nil)
 	enemyTree.Init(engine.Rectangle{engine.Vertex{0, 0}, engine.Vertex{w, h}},
-		0, &engine.QuadTreeInfo{MaxDepth: 5})
+		0, &engine.QuadTreeInfo{MaxDepth: 5}, nil)
 
     // Generate some objects.
 	go GenerateObjects(objchan)
@@ -109,20 +128,20 @@ func main() {
 	t2 := time.Now()
 	fmt.Println("Create time taken:", t2.Sub(t))
 
-    //engine.Draw_Init()
+    engine.Draw_Init()
 
     t = time.Now()
     i := 0
     for i < 10000 {
         Move()
         Collide()
-        //Draw()
+        Draw()
         i += 1
     }
     t2 = time.Now()
     fmt.Println("BOOM:", t2.Sub(t) / 9999.0)
 
-    //engine.Draw_Stop()
+    engine.Draw_Stop()
 
     /*
 	t = time.Now()

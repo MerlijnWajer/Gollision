@@ -9,4 +9,3 @@ type Vertex struct {
 type Rectangle struct {
 	LT, RB Vertex
 }
-

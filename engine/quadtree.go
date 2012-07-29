@@ -11,12 +11,18 @@ type QuadTreeInfo struct {
 	MaxDepth int
 }
 
+type WalkFunc func(e *list.Element)
+
 type QuadTree struct {
 	s     *list.List
 	r     Rectangle
 	depth int
 
 	i *QuadTreeInfo
+
+    parent *QuadTree
+
+    // TODO: Parent?
 
 	// TODO: TreeStats(maxdepth, itemcount) (only one per quad tree)
 	// NodeStats (items in children, etc)
@@ -29,13 +35,14 @@ type QuadTree struct {
 
 /* Tree creation functions */
 
-func (q *QuadTree) Init(r Rectangle, depth int, i *QuadTreeInfo) *QuadTree {
+func (q *QuadTree) Init(r Rectangle, depth int, i *QuadTreeInfo, p *QuadTree) *QuadTree {
 	q.s = new(list.List)
 	q.s.Init()
 
 	q.r = r
 	q.i = i
 	q.depth = depth + 1
+    q.parent = p
 
 	if i.MaxDepth > q.depth {
 		q.SubDivide()
@@ -58,10 +65,10 @@ func (q *QuadTree) SubDivide() bool {
 		Vertex{q.r.RB.X - w2, q.r.RB.Y}}
 	SEArea := Rectangle{Vertex{q.r.LT.X + w2, q.r.LT.Y + h2}, q.r.RB}
 
-	q.NW = new(QuadTree).Init(NWArea, q.depth, q.i)
-	q.NE = new(QuadTree).Init(NEArea, q.depth, q.i)
-	q.SW = new(QuadTree).Init(SWArea, q.depth, q.i)
-	q.SE = new(QuadTree).Init(SEArea, q.depth, q.i)
+	q.NW = new(QuadTree).Init(NWArea, q.depth, q.i, q)
+	q.NE = new(QuadTree).Init(NEArea, q.depth, q.i, q)
+	q.SW = new(QuadTree).Init(SWArea, q.depth, q.i, q)
+	q.SE = new(QuadTree).Init(SEArea, q.depth, q.i, q)
 
 	return true
 }
@@ -115,12 +122,60 @@ func (q *QuadTree) Add(o *Object, wg *sync.WaitGroup) {
 		q.Lock()
 
 		q.s.PushBack(o)
+        o.CurrentNode = q
 		added = true
 
 		q.Unlock()
 	}
 
-	wg.Done()
+	if wg != nil {
+        wg.Done()
+    }
+}
+
+// Move object to new pos
+func (q *QuadTree) Move(e *list.Element) {
+    o := e.Value.(*Object)
+    // Always remove. In the worst case we're part of the root node.
+    // Which always contains us. If we fit in the node, recursively add it.
+    // If we don't fit, recursively move to the top until we fit.
+    o.CurrentNode.s.Remove(e)
+
+    if o.CurrentNode.CanContain(o) {
+        q.Add(o, nil)
+    } else {
+        o.CurrentNode.performMove(o)
+    }
+}
+
+func (q *QuadTree) performMove(o* Object) {
+    if !q.CanContain(o) {
+        if q.parent != nil {
+            q.parent.performMove(o)
+        } else {
+            fmt.Println(o)
+            panic("Item does not fit into any node!")
+        }
+
+    } else {
+        q.Add(o, nil)
+    }
+
+}
+
+// Use this to iterate over the tree.
+func (q* QuadTree) Walk(w WalkFunc) {
+	for e := q.s.Front(); e != nil; e = e.Next() {
+		//o := e.Value.(*Object)
+        w(e)
+	}
+
+	if q.NW != nil {
+		q.NW.Walk(w)
+		q.NE.Walk(w)
+		q.SW.Walk(w)
+		q.SE.Walk(w)
+	}
 }
 
 func (q *QuadTree) Print(d int) {

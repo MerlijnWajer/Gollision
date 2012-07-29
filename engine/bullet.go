@@ -9,15 +9,15 @@ type Object struct {
 	Pos, Size Vertex
 	Collides  bool
 
+    CurrentNode *QuadTree
+
     // backref to node in the tree?
 
-    Bullet
+    *Bullet
 }
 
 type MoveFunc func(b *Bullet)
 
 type Bullet struct {
     Move MoveFunc
-
-
 }

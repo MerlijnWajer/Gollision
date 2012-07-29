@@ -22,7 +22,6 @@ var surface *sdl.Surface
 var surfaceb *sdl.Surface
 
 func draw_sdl(q *QuadTree, s *sdl.Surface) {
-
 	for e := q.s.Front(); e != nil; e = e.Next() {
 		o := e.Value.(*Object)
 		var ss *sdl.Surface
@@ -96,6 +95,7 @@ func Draw(q *QuadTree) {
 
     draw_sdl(q, screen)
     screen.Flip()
+	screen.FillRect(nil, 0xff000000)
 
 	//running := true
 	//for running {
