@@ -121,7 +121,7 @@ func (q *QuadTree) Add(o *Object, wg *sync.WaitGroup) {
 	if !added {
 		q.Lock()
 
-		q.s.PushBack(o)
+		q.s.PushFront(o)
         o.CurrentNode = q
 		added = true
 
@@ -143,15 +143,6 @@ func (q *QuadTree) Move(e *list.Element) {
         o.CurrentNode.s.Remove(e)
         o.CurrentNode.performMove(o)
     }
-
-/*
-    if o.CurrentNode.CanContain(o) {
-        q.Add(o, nil)
-    } else {
-        o.CurrentNode.performMove(o)
-    }
-*/
-    //o.CurrentNode.performMove(o)
 }
 
 func (q *QuadTree) performMove(o* Object) {
