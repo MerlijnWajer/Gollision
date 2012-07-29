@@ -7,7 +7,7 @@ import (
 	"time"
     "container/list"
     "flag"
-    //"sync"
+    "sync"
 )
 
 const (
@@ -22,6 +22,8 @@ var (
     enemyTree *engine.QuadTree
     speedx, speedy int
 	insert int
+
+    DrawChannel chan *engine.Object
 )
 
 // Generate random objects and send them over the channel.
@@ -90,6 +92,7 @@ func Move() {
 
 func Collide() {
     objchan := make(chan *engine.Object, 9001)
+
 	go func() {
         engine.FindCollision(player.CurrentNode, player, objchan)
         close(objchan)
@@ -98,10 +101,20 @@ func Collide() {
 	for o := range objchan {
 		o.Collides = true
 	}
+
+    enemyTree.Walk(
+        func(e *list.Element) {
+            o := e.Value.(*engine.Object)
+            DrawChannel <- o
+        })
+    close(DrawChannel)
 }
 
 func Draw() {
-    engine.Draw(enemyTree)
+    for o := range DrawChannel {
+        engine.Draw(o)
+    }
+    engine.DrawFlip()
 }
 
 func main() {
@@ -111,6 +124,7 @@ func main() {
     flag.Parse()
 	fmt.Println("Gollision")
 
+    DrawChannel = make(chan *engine.Object, 300)
 
 	player = &engine.Object{Size: engine.Vertex{200, 200}, Pos: engine.Vertex{300, 300}}
 
@@ -134,18 +148,31 @@ func main() {
 	t2 := time.Now()
 	fmt.Println("Create time taken:", t2.Sub(t))
 
-    //engine.Draw_Init()
+    engine.Draw_Init()
+    go Draw()
+    defer engine.Draw_Stop()
 
     t = time.Now()
     i := 0
-    for i < 10000 {
+    for i < 1000 {
         Move()
-        Collide()
-        //Draw()
+
+        DrawChannel = make(chan *engine.Object, 300)
+        wg := new(sync.WaitGroup)
+        wg.Add(1)
+        go func() {
+            Collide()
+            wg.Done()
+        }()
+        wg.Add(1)
+        go func() {
+            Draw()
+            wg.Done()
+        }()
+        wg.Wait()
         i += 1
     }
     t2 = time.Now()
-    fmt.Println("BOOM:", t2.Sub(t) / 9999.0)
-
-    //engine.Draw_Stop()
+    fmt.Println("BOOM:", t2.Sub(t) / 999.0)
+    fmt.Println("FPS:", float64(i) / (float64(t2.Sub(t)) / float64(time.Second)))
 }

@@ -21,39 +21,21 @@ var screen *sdl.Surface
 var surface *sdl.Surface
 var surfaceb *sdl.Surface
 
-func draw_sdl(q *QuadTree, s *sdl.Surface) {
-	for e := q.s.Front(); e != nil; e = e.Next() {
-		o := e.Value.(*Object)
-		var ss *sdl.Surface
-		if o.Collides {
-			ss = surfaceb
-		} else {
-			ss = surface
-		}
+func draw_sdl(o *Object, s *sdl.Surface) {
+    var ss *sdl.Surface
+    if o.Collides {
+        ss = surfaceb
+    } else {
+        ss = surface
+    }
 
-		/*
-		   fmt.Println(sdl.Rect{int16(float64(o.Pos.X) * ssw),
-		       int16(float64(o.Pos.Y) * ssh),
-		       uint16(float64((o.Pos.X + o.Size.X)) * ssw),
-		       uint16(float64((o.Pos.Y + o.Size.Y)) * ssh)})
-		*/
-
-		/*fmt.Println(o.Size.X, o.Size.Y)*/
-		s.Blit(
-			&sdl.Rect{int16(float64(o.Pos.X) * ssw),
-				int16(float64(o.Pos.Y) * ssh),
-				uint16(float64((o.Pos.X + o.Size.X)) * ssw),
-				uint16(float64((o.Pos.Y + o.Size.Y)) * ssh)},
-			ss,
-			&sdl.Rect{0, 0, uint16(o.Size.X), uint16(o.Size.Y)})
-	}
-
-	if q.NW != nil {
-		draw_sdl(q.NW, s)
-		draw_sdl(q.NE, s)
-		draw_sdl(q.SW, s)
-		draw_sdl(q.SE, s)
-	}
+    s.Blit(
+        &sdl.Rect{int16(float64(o.Pos.X) * ssw),
+            int16(float64(o.Pos.Y) * ssh),
+            uint16(float64((o.Pos.X + o.Size.X)) * ssw),
+            uint16(float64((o.Pos.Y + o.Size.Y)) * ssh)},
+        ss,
+        &sdl.Rect{0, 0, uint16(o.Size.X), uint16(o.Size.Y)})
 }
 
 func Draw_Init() {
@@ -89,13 +71,17 @@ func Draw_Stop() {
     sdl.Quit()
 }
 
-func Draw(q *QuadTree) {
+func Draw(o *Object) {
 	//ticker := time.NewTicker(time.Second) // 50 Hz
 	//ticker := time.NewTicker(time.Second / 50) // 50 Hz
 
-    draw_sdl(q, screen)
+    draw_sdl(o, screen)
+}
+
+func DrawFlip() {
     screen.Flip()
 	screen.FillRect(nil, 0xff000000)
+}
 
 	//running := true
 	//for running {
@@ -112,4 +98,3 @@ func Draw(q *QuadTree) {
 	//		}
 	//	}
 	//}
-}
