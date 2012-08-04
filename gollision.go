@@ -1,53 +1,53 @@
 package main
 
 import (
-	"engine"
-	"fmt"
-	"math/rand"
-	"time"
     "container/list"
+    "engine"
     "flag"
+    "fmt"
+    "math/rand"
     "sync"
+    "time"
 )
 
 const (
-	w      = 1024
-	h      = 768
-	magic  = 20
+    w     = 1024
+    h     = 768
+    magic = 20
 )
 
 var (
-    player *engine.Object
-    playerTree *engine.QuadTree
-    enemyTree *engine.QuadTree
+    player         *engine.Object
+    playerTree     *engine.QuadTree
+    enemyTree      *engine.QuadTree
     speedx, speedy int
-	insert int
+    insert         int
 
     DrawChannel chan *engine.Object
 )
 
 // Generate random objects and send them over the channel.
 func GenerateObjects(c chan *engine.Object) {
-	var o *engine.Object
-	amt := 0
-	for amt < insert {
-		amt += 1
-		x := rand.Intn(magic)
-		y := rand.Intn(magic)
-		if rand.Intn(100) > 98 {
-			x = 1
-		}
-		if rand.Intn(100) > 98 {
-			y = 1
-		}
-		o = &engine.Object{
-			Pos:  engine.Vertex{rand.Intn(w - magic), rand.Intn(h - magic)},
-			Size: engine.Vertex{x, y}}
+    var o *engine.Object
+    amt := 0
+    for amt < insert {
+        amt += 1
+        x := rand.Intn(magic)
+        y := rand.Intn(magic)
+        if rand.Intn(100) > 98 {
+            x = 1
+        }
+        if rand.Intn(100) > 98 {
+            y = 1
+        }
+        o = &engine.Object{
+            Pos:  engine.Vertex{rand.Intn(w - magic), rand.Intn(h - magic)},
+            Size: engine.Vertex{x, y}}
 
-		c <- o
-	}
+        c <- o
+    }
 
-	close(c)
+    close(c)
 }
 
 func Move() {
@@ -61,10 +61,10 @@ func Move() {
 
             b.Pos.X = b.Pos.X + speedx
             b.Pos.Y = b.Pos.Y + speedy
-            if b.Pos.X + b.Size.X > w {
+            if b.Pos.X+b.Size.X > w {
                 b.Pos.X = 0
             }
-            if b.Pos.Y + b.Size.Y > h {
+            if b.Pos.Y+b.Size.Y > h {
                 b.Pos.Y = 0
             }
             enemyTree.Move(e)
@@ -93,15 +93,17 @@ func Move() {
 func Collide() {
     objchan := make(chan *engine.Object, 9001)
 
-	go func() {
+    go func() {
         engine.FindCollision(player.CurrentNode, player, objchan)
         close(objchan)
-	}()
+    }()
 
-	for o := range objchan {
-		o.Collides = true
-	}
+    for o := range objchan {
+        o.Collides = true
+    }
 
+    // Send tree to draw channel. Obviously we need to do this
+    // while performing collision.
     enemyTree.Walk(
         func(e *list.Element) {
             o := e.Value.(*engine.Object)
@@ -122,31 +124,31 @@ func main() {
     flag.IntVar(&speedy, "speedy", 1, "Speed Y")
     flag.IntVar(&insert, "insert", 1000, "Amount of bullets")
     flag.Parse()
-	fmt.Println("Gollision")
+    fmt.Println("Gollision")
 
     DrawChannel = make(chan *engine.Object, 300)
 
-	player = &engine.Object{Size: engine.Vertex{200, 200}, Pos: engine.Vertex{300, 300}}
+    player = &engine.Object{Size: engine.Vertex{200, 200}, Pos: engine.Vertex{300, 300}}
 
     // TODO: 300 is random
-	objchan := make(chan *engine.Object, 300)
+    objchan := make(chan *engine.Object, 300)
 
-	t := time.Now()
+    t := time.Now()
 
-	playerTree = new(engine.QuadTree)
-	enemyTree = new(engine.QuadTree)
-	playerTree.Init(engine.Rectangle{engine.Vertex{0, 0}, engine.Vertex{w, h}},
-		0, &engine.QuadTreeInfo{MaxDepth: 5}, nil)
-	enemyTree.Init(engine.Rectangle{engine.Vertex{0, 0}, engine.Vertex{w, h}},
-		0, &engine.QuadTreeInfo{MaxDepth: 5}, nil)
+    playerTree = new(engine.QuadTree)
+    enemyTree = new(engine.QuadTree)
+    playerTree.Init(engine.Rectangle{engine.Vertex{0, 0}, engine.Vertex{w, h}},
+        0, &engine.QuadTreeInfo{MaxDepth: 5}, nil)
+    enemyTree.Init(engine.Rectangle{engine.Vertex{0, 0}, engine.Vertex{w, h}},
+        0, &engine.QuadTreeInfo{MaxDepth: 5}, nil)
 
     // Generate some objects.
-	objchan <- player
-	go GenerateObjects(objchan)
-	enemyTree.AddObjects(objchan)
+    objchan <- player
+    go GenerateObjects(objchan)
+    enemyTree.AddObjects(objchan)
 
-	t2 := time.Now()
-	fmt.Println("Create time taken:", t2.Sub(t))
+    t2 := time.Now()
+    fmt.Println("Create time taken:", t2.Sub(t))
 
     engine.Draw_Init()
     go Draw()
@@ -173,6 +175,6 @@ func main() {
         i += 1
     }
     t2 = time.Now()
-    fmt.Println("BOOM:", t2.Sub(t) / 999.0)
-    fmt.Println("FPS:", float64(i) / (float64(t2.Sub(t)) / float64(time.Second)))
+    fmt.Println("BOOM:", t2.Sub(t)/999.0)
+    fmt.Println("FPS:", float64(i)/(float64(t2.Sub(t))/float64(time.Second)))
 }

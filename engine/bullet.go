@@ -6,8 +6,8 @@ package engine
 // Changing it to Pos() and Size() will make the code *TWICE* as slow.
 // Just use Object for everything for now.
 type Object struct {
-	Pos, Size Vertex
-	Collides  bool
+    Pos, Size Vertex
+    Collides  bool
 
     CurrentNode *QuadTree
 
